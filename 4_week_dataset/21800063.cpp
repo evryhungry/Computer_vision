@@ -100,6 +100,56 @@ void applyConversion(Mat& frame){
   cvtColor(HSV, frame, COLOR_HSV2BGR);
 }
 
+void applyAverage(Mat& frame){
+  blur(frame, frame, Size(9, 9));
+}
+
+void applySharpening(Mat& frame){
+  Mat blurred_frame, laplacian, abs_laplacian, sharpened;
+
+  blur(frame, blurred_frame, Size(9, 9));
+
+  Laplacian(frame, laplacian, CV_16S, 1, 1, 0);
+  convertScaleAbs(laplacian, abs_laplacian);
+  sharpened = frame + abs_laplacian;
+
+  frame = sharpened;
+}
+
+void applyWhite(Mat& frame){
+  Mat bgr_channels[3]; 
+
+  split(frame, bgr_channels);
+  double avg;
+  int sum,temp, x, y, c;
+  
+  for (c = 0; c < frame.channels(); c++) { 
+    sum = 0;
+    avg = 0.0f;
+    for (y = 0; y < frame.rows; y++) {
+      for (x = 0; x < frame.cols; x++) {
+        sum += bgr_channels[c].at<uchar>(y, x); 
+      }
+    }
+    
+    avg = sum / (frame.rows * frame.cols); 
+    
+    for (y = 0; y < frame.rows; y++) {
+      for (x = 0; x < frame.cols; x++) {
+        temp = (128 / avg) * bgr_channels[c].at<uchar>(y, x); 
+        if (temp>255) bgr_channels[c].at<uchar>(y, x) = 255; 
+        else bgr_channels[c].at<uchar>(y, x) = temp;
+      } 
+    }
+  }
+  
+  merge(bgr_channels, 3, frame);
+}
+
+
+
+
+
 
 int main(){
   Mat frame, originalFrame;
@@ -144,29 +194,46 @@ int main(){
 
       case 'c':
         nowTransform = CONVERSION;
-        break;       
+        break;   
+
+      case 'a':
+        nowTransform = AVERAGE;
+        break;   
+
+      case 'u':
+        nowTransform = SHARPENING;
+        break;
+
+      case 'w':
+        nowTransform = WHITE;
+        break;    
     }
 
-    if (nowTransform & NEGATIVE) {
-        applyNegative(frame);
+    if (nowTransform == NEGATIVE){
+      applyNegative(frame);
+    }
+    else if (nowTransform == GAMMA){
+      applyGamma(frame); 
+    }
+    else if (nowTransform == HISTOGRAM){
+      applyHistogram(frame); 
+    }
+    else if (nowTransform == SLICING){
+      applySlicing(frame);  
+    }
+    else if (nowTransform == CONVERSION){
+      applyConversion(frame);  
+    }
+    else if (nowTransform == AVERAGE){
+      applyAverage(frame);
+    }
+    else if (nowTransform == SHARPENING){
+      applySharpening(frame);
+    }
+    else if (nowTransform == WHITE){
+      applyWhite(frame);
     }
 
-    if (nowTransform & GAMMA) {
-        applyGamma(frame); 
-    }
-
-    if (nowTransform & HISTOGRAM) {
-        applyHistogram(frame); 
-    }
-
-    if (nowTransform & SLICING) {
-        applySlicing(frame);  
-    }
-
-    if (nowTransform & CONVERSION) {
-        applyConversion(frame);  
-    }
-    
     imshow("video", frame);
   }
 }

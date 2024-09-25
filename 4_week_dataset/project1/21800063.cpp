@@ -19,7 +19,18 @@ enum TransformType {
 };
 
 void applyNegative(Mat& frame) {
-  frame = 255 - frame;
+  Mat hsv_image;
+  
+  cvtColor(frame, hsv_image, COLOR_BGR2HSV);
+
+  vector<Mat> hsv_matrix;
+  split(hsv_image, hsv_matrix);
+
+  hsv_matrix[2] = 255 - hsv_matrix[2];
+  
+  merge(hsv_matrix, hsv_image);
+
+  cvtColor(hsv_image, frame, COLOR_HSV2BGR);
 }
 
 void applyGamma(Mat& frame){
@@ -42,13 +53,14 @@ void applyGamma(Mat& frame){
 }
 
 void applyHistogram(Mat& frame){
-  Mat gray;
-  cvtColor(frame, gray, COLOR_BGR2GRAY);
+  vector<Mat> bgr_channels;
+  split(frame, bgr_channels);
 
-  Mat equalized;
-  equalizeHist(gray, equalized);
+  for (int i = 0; i < 3; i++) {
+      equalizeHist(bgr_channels[i], bgr_channels[i]);
+  }
 
-  cvtColor(equalized, frame, COLOR_GRAY2BGR);
+  merge(bgr_channels, frame);
 }
 
 
@@ -165,7 +177,8 @@ int main(){
   
   while (isRun){
     cap >> frame;
-    
+    if (frame.empty()) break;
+
     int key = waitKey(delay);
     switch (key){
       case 27:

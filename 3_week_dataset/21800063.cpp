@@ -7,7 +7,7 @@ using namespace std;
 int main() {
   Mat image, sharpening;
   image = imread("Moon.png",0);
-  
+
   if (image.empty()) {
       cerr << "Error: Could not open or find the image" << endl;
       return -1;

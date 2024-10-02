@@ -31,6 +31,7 @@ int main() {
 
     cvtColor(frame, gray, COLOR_BGR2GRAY);
     GaussianBlur(gray, blur, Size(5, 5), 5, 5, BORDER_DEFAULT);
+    GaussianBlur(blur, blur, Size(5, 5), 5, 5, BORDER_DEFAULT);
     Canny(blur, canny, 10, 60);
 
     Mat left_roi = canny(Rect(200, 400, 400, 200));

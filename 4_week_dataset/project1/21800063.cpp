@@ -103,7 +103,7 @@ void applyConversion(Mat& frame){
     s = cc[1].ptr<uchar>(y);
     
     for (int x = 0; x < frame.cols; x++) {
-      if (h[x] + 50 > 179) h[x] = h[x] + 50 - 179; 
+      if (h[x] >= 129) h[x] = h[x] - 129; 
       else h[x] += 50;
     }
   }

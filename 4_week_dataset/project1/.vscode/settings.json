@@ -1,0 +1,16 @@
+{
+  "files.associations": {
+    ".fantomasignore": "ignore",
+    "iostream": "cpp",
+    "cmath": "cpp",
+    "ios": "cpp",
+    "istream": "cpp",
+    "version": "cpp",
+    "streambuf": "cpp",
+    "ostream": "cpp",
+    "iosfwd": "cpp"
+  },
+  "files.watcherExclude": {
+    "**/target": true
+  }
+}

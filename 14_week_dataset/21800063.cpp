@@ -1,9 +1,94 @@
+// #include <opencv2/opencv.hpp>
+// #include <iostream>
+// #include <cmath>
+
+// using namespace cv;
+// using namespace std;
+
+// Mat dct_quantize(const Mat& img, const Mat& quant_matrix) {
+//     Mat compressed_img = Mat::zeros(img.size(), CV_64F);
+
+//     for (int i = 0; i < img.rows; i += 8) {
+//         for (int j = 0; j < img.cols; j += 8) {
+//             Mat block = img(Rect(j, i, 8, 8));
+//             Mat dct_block, quant_block, dequant_block, idct_block;
+
+//             block.convertTo(block, CV_64F);
+//             dct(block - 128, dct_block);
+
+//             quant_block = dct_block / quant_matrix;
+//             quant_block.forEach<double>([](double& val, const int* position) -> void {
+//                 val = std::round(val);  // 요소별로 round 적용
+//             });
+
+//             dequant_block = quant_block.mul(quant_matrix);
+
+//             idct(dequant_block, idct_block);
+//             idct_block += 128;
+
+//             idct_block.copyTo(compressed_img(Rect(j, i, 8, 8)));
+//         }
+//     }
+
+//     Mat result;
+//     compressed_img.convertTo(result, CV_8U);
+//     return result;
+// }
+
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <cmath>
 
 using namespace cv;
 using namespace std;
+
+const double PI = 3.14159265358979323846;
+
+// DCT 직접 구현
+Mat custom_dct(const Mat& block) {
+    int N = block.rows; // 블록 크기 (8x8)
+    Mat dct_block = Mat::zeros(N, N, CV_64F);
+
+    for (int u = 0; u < N; ++u) {
+        for (int v = 0; v < N; ++v) {
+            double sum = 0.0;
+            for (int x = 0; x < N; ++x) {
+                for (int y = 0; y < N; ++y) {
+                    sum += block.at<double>(x, y) *
+                           cos(PI * (2 * x + 1) * u / (2.0 * N)) *
+                           cos(PI * (2 * y + 1) * v / (2.0 * N));
+                }
+            }
+            double cu = (u == 0) ? sqrt(1.0 / N) : sqrt(2.0 / N);
+            double cv = (v == 0) ? sqrt(1.0 / N) : sqrt(2.0 / N);
+            dct_block.at<double>(u, v) = cu * cv * sum;
+        }
+    }
+    return dct_block;
+}
+
+// IDCT 직접 구현
+Mat custom_idct(const Mat& dct_block) {
+    int N = dct_block.rows; // 블록 크기 (8x8)
+    Mat block = Mat::zeros(N, N, CV_64F);
+
+    for (int x = 0; x < N; ++x) {
+        for (int y = 0; y < N; ++y) {
+            double sum = 0.0;
+            for (int u = 0; u < N; ++u) {
+                for (int v = 0; v < N; ++v) {
+                    double cu = (u == 0) ? sqrt(1.0 / N) : sqrt(2.0 / N);
+                    double cv = (v == 0) ? sqrt(1.0 / N) : sqrt(2.0 / N);
+                    sum += cu * cv * dct_block.at<double>(u, v) *
+                           cos(PI * (2 * x + 1) * u / (2.0 * N)) *
+                           cos(PI * (2 * y + 1) * v / (2.0 * N));
+                }
+            }
+            block.at<double>(x, y) = sum;
+        }
+    }
+    return block;
+}
 
 Mat dct_quantize(const Mat& img, const Mat& quant_matrix) {
     Mat compressed_img = Mat::zeros(img.size(), CV_64F);
@@ -14,16 +99,19 @@ Mat dct_quantize(const Mat& img, const Mat& quant_matrix) {
             Mat dct_block, quant_block, dequant_block, idct_block;
 
             block.convertTo(block, CV_64F);
-            dct(block - 128, dct_block);
+            
+            // custom_dct로 변환
+            dct_block = custom_dct(block - 128);
 
             quant_block = dct_block / quant_matrix;
             quant_block.forEach<double>([](double& val, const int* position) -> void {
-                val = std::round(val);  // 요소별로 round 적용
+                val = std::round(val);
             });
 
             dequant_block = quant_block.mul(quant_matrix);
 
-            idct(dequant_block, idct_block);
+            // custom_idct로 변환
+            idct_block = custom_idct(dequant_block);
             idct_block += 128;
 
             idct_block.copyTo(compressed_img(Rect(j, i, 8, 8)));
@@ -34,6 +122,7 @@ Mat dct_quantize(const Mat& img, const Mat& quant_matrix) {
     compressed_img.convertTo(result, CV_8U);
     return result;
 }
+
 
 double calculate_psnr(const Mat& original, const Mat& compressed) {
     Mat diff;

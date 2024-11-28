@@ -44,9 +44,8 @@ using namespace std;
 
 const double PI = 3.14159265358979323846;
 
-// DCT 직접 구현
 Mat custom_dct(const Mat& block) {
-    int N = block.rows; // 블록 크기 (8x8)
+    int N = block.rows; 
     Mat dct_block = Mat::zeros(N, N, CV_64F);
 
     for (int u = 0; u < N; ++u) {
@@ -67,9 +66,8 @@ Mat custom_dct(const Mat& block) {
     return dct_block;
 }
 
-// IDCT 직접 구현
 Mat custom_idct(const Mat& dct_block) {
-    int N = dct_block.rows; // 블록 크기 (8x8)
+    int N = dct_block.rows;
     Mat block = Mat::zeros(N, N, CV_64F);
 
     for (int x = 0; x < N; ++x) {
@@ -99,8 +97,7 @@ Mat dct_quantize(const Mat& img, const Mat& quant_matrix) {
             Mat dct_block, quant_block, dequant_block, idct_block;
 
             block.convertTo(block, CV_64F);
-            
-            // custom_dct로 변환
+
             dct_block = custom_dct(block - 128);
 
             quant_block = dct_block / quant_matrix;
@@ -110,7 +107,6 @@ Mat dct_quantize(const Mat& img, const Mat& quant_matrix) {
 
             dequant_block = quant_block.mul(quant_matrix);
 
-            // custom_idct로 변환
             idct_block = custom_idct(dequant_block);
             idct_block += 128;
 
@@ -181,7 +177,6 @@ int main(int argc, char* argv[]) {
     vector<string> window_names = {"Original Y", "QM1", "QM2", "QM3"};
     vector<double> psnrs;
 
-    // 원본 Y 채널 표시
     imshow("Original Y", y_channel);
 
     for (size_t i = 0; i < quant_matrices.size(); ++i) {

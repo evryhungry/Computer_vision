@@ -107,9 +107,8 @@ int main() {
         return -1;
     }
 
-    // 초기 파노라마 캔버스 크기 설정 (4096 * 4, 3000)
     Mat panorama(Size(images[0].cols * images.size(), images[0].rows * images.size()/2), CV_8UC3, Scalar(0, 0, 0));
-    images[0].copyTo(panorama(Rect(0, 0, images[0].cols, images[0].rows))); // 첫 번째 이미지 복사
+    images[0].copyTo(panorama(Rect(0, 0, images[0].cols, images[0].rows))); 
 
     Ptr<ORB> orb = ORB::create();
 
@@ -117,20 +116,17 @@ int main() {
         vector<KeyPoint> keypoints1, keypoints2;
         Mat descriptors1, descriptors2;
 
-        // 특징점 및 디스크립터 계산
         orb->detectAndCompute(panorama, noArray(), keypoints1, descriptors1);
         orb->detectAndCompute(images[i], noArray(), keypoints2, descriptors2);
 
-        // 매칭
         BFMatcher matcher(NORM_HAMMING);
         vector<DMatch> matches;
         matcher.match(descriptors1, descriptors2, matches);
 
-        // 매칭 점 필터링
         sort(matches.begin(), matches.end(), [](const DMatch& a, const DMatch& b) {
             return a.distance < b.distance;
         });
-        matches.resize(min(75, (int)matches.size()));  // 매칭 점 수 제한
+        matches.resize(min(75, (int)matches.size()));
 
         vector<Point2f> points1, points2;
         for (const auto& match : matches) {
@@ -138,24 +134,20 @@ int main() {
             points2.push_back(keypoints2[match.trainIdx].pt);
         }
 
-        // 호모그래피 계산
         Mat H = findHomography(points2, points1, RANSAC, 3.0);
         if (H.empty()) {
             cout << "호모그래피 계산 실패!" << endl;
             continue;
         }
 
-        // 이미지 변환
         Mat warpedImg;
         warpPerspective(images[i], warpedImg, H, 
                         Size(panorama.cols + images[i].cols, panorama.rows));
 
-        // 검은 영역 마스크 생성
         Mat mask;
         inRange(warpedImg, Scalar(0, 0, 0), Scalar(0, 0, 0), mask);
-        bitwise_not(mask, mask); //확인 해보아야 할것
+        bitwise_not(mask, mask);
 
-        // 병합
         for (int y = 0; y < panorama.rows; y++) {
             for (int x = 0; x < panorama.cols; x++) {
                 if (mask.at<uchar>(y, x) > 0) {
